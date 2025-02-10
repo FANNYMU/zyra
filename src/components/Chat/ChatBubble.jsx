@@ -8,7 +8,7 @@ import { sanitizeInput } from '../../utils/sanitizer';
 
 const ChatBubble = ({ message, isUser }) => {
   const handleCopy = () => {
-    navigator.clipboard.writeText(message);
+    navigator.clipboard.writeText(typeof message === 'object' ? message.text : message);
   };
 
   const formatMarkdown = (text) => {
@@ -17,7 +17,9 @@ const ChatBubble = ({ message, isUser }) => {
     return text;
   };
 
-  const sanitizedMessage = sanitizeInput(message);
+  const messageText = typeof message === 'object' ? message.text : message;
+  const messageImage = typeof message === 'object' ? message.image : null;
+  const sanitizedMessage = sanitizeInput(messageText);
 
   return (
     <motion.div
@@ -58,11 +60,22 @@ const ChatBubble = ({ message, isUser }) => {
                 </div>
               )}
             </div>
+            
+            {messageImage && (
+              <div className="mb-2">
+                <img 
+                  src={messageImage} 
+                  alt="Uploaded" 
+                  className="w-full h-auto max-h-[200px] object-cover rounded-lg border border-emerald-800/20"
+                />
+              </div>
+            )}
+            
             {isUser ? (
               <div className="break-all overflow-hidden">
                 <Typewriter
                   options={{
-                    delay: 30,
+                    delay: 40,
                     cursor: '',
                     strings: [sanitizedMessage],
                     autoStart: true,
@@ -108,7 +121,13 @@ const ChatBubble = ({ message, isUser }) => {
 };
 
 ChatBubble.propTypes = {
-  message: PropTypes.string.isRequired,
+  message: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.shape({
+      text: PropTypes.string.isRequired,
+      image: PropTypes.string
+    })
+  ]).isRequired,
   isUser: PropTypes.bool.isRequired,
 };
 

@@ -2,9 +2,18 @@
 const MISTRAL_API_KEY = import.meta.env.VITE_MISTRAL_API_KEY;
 const MISTRAL_API_URL = 'https://api.mistral.ai/v1/chat/completions';
 
-export const generateResponse = async (message, chatHistory = [], onUpdate = () => {}) => {
+const convertImageToBase64 = async (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
+export const generateResponse = async (message, chatHistory = [], onUpdate = () => {}, imageFile = null) => {
   try {
-    const messages = [
+    let messages = [
       {
         role: 'system',
         content: 'Kamu adalah asisten AI yang berbicara dengan gaya bahasa Jakarta Selatan (Jaksel) tapi jangan terlalu kasar. Gunakan bahasa yang santai, modern, dan sering mencampur Bahasa Indonesia dengan Bahasa Inggris tapi jangan terlalu sering. Contoh: "Anyway gue prefer pake cara yang simple sih, which is basically lebih effortif". Tetap profesional tapi friendly dan relatable. Hindari bahasa yang terlalu formal. Jangan memulai respon dengan kalimat seperti "Oke, mari kita bahas..." atau sejenisnya. Langsung saja ke inti pembahasan dengan gaya santai.'
@@ -12,9 +21,22 @@ export const generateResponse = async (message, chatHistory = [], onUpdate = () 
       ...chatHistory.map(msg => ({
         role: msg.isUser ? 'user' : 'assistant',
         content: msg.text
-      })),
-      { role: 'user', content: message }
+      }))
     ];
+
+    // Jika ada gambar, tambahkan sebagai base64
+    if (imageFile) {
+      const base64Image = await convertImageToBase64(imageFile);
+      messages.push({
+        role: 'user',
+        content: [
+          { type: 'text', text: message },
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
+        ]
+      });
+    } else {
+      messages.push({ role: 'user', content: message });
+    }
 
     const response = await fetch(MISTRAL_API_URL, {
       method: 'POST',
@@ -23,7 +45,7 @@ export const generateResponse = async (message, chatHistory = [], onUpdate = () 
         'Authorization': `Bearer ${MISTRAL_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'mistral-large-latest',
+        model: imageFile ? 'pixtral-12b-2409' : 'mistral-large-latest',
         messages: messages,
         stream: true,
         max_tokens: 1000,

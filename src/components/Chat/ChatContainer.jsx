@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ChatBubble from './ChatBubble';
+import ChatInput from './ChatInput';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send as SendIcon, Menu, Settings, Plus, MessageSquare, Trash2, Sun, Moon, Volume2, VolumeX, Languages } from 'lucide-react';
 import { generateResponse } from '../../services/mistralService';
@@ -140,13 +141,15 @@ const ChatContainer = () => {
     }
   };
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    const messageToSend = inputMessage.trim();
-    if (!messageToSend) return;
+  const handleSendMessage = async (messageText, imageFile = null) => {
+    if (!messageText.trim()) return;
 
     setError(null);
-    const userMessage = { text: messageToSend, isUser: true };
+    const userMessage = { 
+      text: messageText, 
+      isUser: true,
+      image: imageFile ? URL.createObjectURL(imageFile) : null 
+    };
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsTyping(true);
@@ -163,7 +166,7 @@ const ChatContainer = () => {
         });
       };
 
-      const response = await generateResponse(messageToSend, messages, updateBotMessage);
+      const response = await generateResponse(messageText, messages, updateBotMessage, imageFile);
       
       // Simpan chat setelah mendapat respons
       const updatedMessages = [...messages, userMessage, { text: response, isUser: false }];
@@ -572,7 +575,7 @@ const ChatContainer = () => {
                       transition={{ duration: 0.4, delay: index * 0.1 }}
                     >
                       <ChatBubble
-                        message={message.text}
+                        message={message}
                         isUser={message.isUser}
                       />
                     </motion.div>
@@ -613,31 +616,7 @@ const ChatContainer = () => {
               whileHover={{ scale: 1.01 }}
               className="bg-[#0f1f1d] rounded-lg border border-emerald-800/20 shadow-2xl overflow-hidden backdrop-blur-xl"
             >
-              <form onSubmit={handleSendMessage} className="w-full p-1.5">
-                <div className="relative flex items-center">
-                  <motion.input
-                    type="text"
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    onPaste={(e) => {
-                      e.preventDefault();
-                      const text = e.clipboardData.getData('text');
-                      setInputMessage(text);
-                    }}
-                    placeholder="Kirim pesan ke Zyra..."
-                    className="w-full h-12 px-4 pr-12 bg-[#0c1716] text-base text-emerald-300 placeholder-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all border-0 rounded-lg"
-                  />
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    type="submit"
-                    disabled={!inputMessage.trim() || isTyping}
-                    className="absolute right-3 p-2 text-emerald-400 hover:text-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors hover:bg-emerald-800/20"
-                  >
-                    <SendIcon className="w-5 h-5" />
-                  </motion.button>
-                </div>
-              </form>
+              <ChatInput onSendMessage={handleSendMessage} />
             </motion.div>
             <motion.p
               initial={{ opacity: 0 }}
