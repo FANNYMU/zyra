@@ -25,6 +25,9 @@ export default {
           bot: '#4B5563',
           userBg: '#EDE9FE',
           botBg: '#1F2937',
+        },
+        custom: {
+          bg: '#0c1620', // Adding the custom background color
         }
       },
       fontFamily: {
@@ -33,4 +36,4 @@ export default {
     },
   },
   plugins: [],
-} 
+}

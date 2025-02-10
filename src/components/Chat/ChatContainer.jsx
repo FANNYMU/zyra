@@ -210,7 +210,7 @@ const ChatContainer = () => {
         transition={{ type: "spring", stiffness: 200, damping: 25, duration: 0.6 }}
         className={`${
           isSidebarOpen ? 'w-[240px]' : 'w-0'
-        } flex flex-col bg-[#0c1716] border-r border-emerald-800/20 overflow-hidden backdrop-blur-xl relative`}
+        } flex flex-col bg-[#0c1716] border-r border-emerald-800/20 overflow-hidden backdrop-blur-xl relative mt-16 z-40`}
       >
         <AnimatePresence mode="wait">
           {isSidebarOpen && (
@@ -413,7 +413,7 @@ const ChatContainer = () => {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsSidebarOpen(true)}
-            className="fixed top-4 left-4 z-50 p-2 hover:bg-emerald-800/10 rounded-lg transition-all border border-emerald-800/20 hover:border-emerald-700/30 bg-[#0c1716]"
+            className="absolute top-4 left-4 z-30 p-2 hover:bg-emerald-800/10 rounded-lg transition-all border border-emerald-800/20 hover:border-emerald-700/30 bg-[#0c1716]"
           >
             <motion.svg 
               xmlns="http://www.w3.org/2000/svg" 
