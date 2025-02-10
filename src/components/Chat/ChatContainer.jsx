@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send as SendIcon, Menu, Settings, Plus, MessageSquare, Trash2, Sun, Moon, Volume2, VolumeX, Languages } from 'lucide-react';
 import { generateResponse } from '../../services/mistralService';
 import { saveChat, loadChats, deleteChat, clearAllChats } from '../../services/dbService';
+import { sanitizeInput } from '../../utils/sanitizer';
 
 const ChatContainer = () => {
   const [messages, setMessages] = useState([]);
@@ -141,10 +142,11 @@ const ChatContainer = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!inputMessage.trim()) return;
+    const sanitizedInput = sanitizeInput(inputMessage.trim());
+    if (!sanitizedInput) return;
 
     setError(null);
-    const userMessage = { text: inputMessage.trim(), isUser: true };
+    const userMessage = { text: sanitizedInput, isUser: true };
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsTyping(true);
@@ -161,7 +163,7 @@ const ChatContainer = () => {
         });
       };
 
-      const response = await generateResponse(inputMessage, messages, updateBotMessage);
+      const response = await generateResponse(sanitizedInput, messages, updateBotMessage);
       
       // Simpan chat setelah mendapat respons
       const updatedMessages = [...messages, userMessage, { text: response, isUser: false }];
@@ -616,8 +618,14 @@ const ChatContainer = () => {
                   <motion.input
                     type="text"
                     value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
+                    onChange={(e) => setInputMessage(sanitizeInput(e.target.value))}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const text = e.clipboardData.getData('text');
+                      setInputMessage(sanitizeInput(text));
+                    }}
                     placeholder="Kirim pesan ke Zyra..."
+                    maxLength={1000}
                     className="w-full h-12 px-4 pr-12 bg-[#0c1716] text-base text-emerald-300 placeholder-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all border-0 rounded-lg"
                   />
                   <motion.button
