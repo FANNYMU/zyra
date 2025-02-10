@@ -36,9 +36,8 @@ const preventPathTraversal = (input) => {
 const preventCommandInjection = (input) => {
   return input
     .replace(/[&|;$`]/g, '')
-    .replace(/\n/g, '')
-    .replace(/\r/g, '')
-    .replace(/\t/g, '');
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
+    .replace(/\t/g, ' ');
 };
 
 const preventNoSqlInjection = (input) => {
@@ -63,9 +62,9 @@ const preventTemplateInjection = (input) => {
 const preventCrlfInjection = (input) => {
   return input
     .replace(/\r/g, '')
-    .replace(/\n/g, '')
+    .replace(/\n/g, ' ')
     .replace(/%0D/gi, '')
-    .replace(/%0A/gi, '');
+    .replace(/%0A/gi, ' ');
 };
 
 const preventUnicodeAttacks = (input) => {
@@ -74,11 +73,17 @@ const preventUnicodeAttacks = (input) => {
     .replace(/[\u200B-\u200D\uFEFF]/g, '');
 };
 
+const preserveWhitespace = (input) => {
+  return input
+    .replace(/\s+/g, ' ')
+    .replace(/^\s+|\s+$/g, '');
+};
+
 const preventDataUrlXss = (input) => {
   return input
     .replace(/data:/gi, '')
     .replace(/base64/gi, '')
-    .replace(/[^\w\s-.,]/gi, '');
+    .replace(/[^\w\s-.,]/gi, ' ');
 };
 
 const preventPrototypePollution = (input) => {
@@ -147,38 +152,10 @@ const preventXmlAttacks = (input) => {
     .replace(/<!ATTLIST/gi, '');
 };
 
-const sanitizeInput = (input) => {
-  if (typeof input !== 'string') return '';
-  
-  let sanitized = input;
-
-  sanitized = removeScriptTags(sanitized);
-  sanitized = escapeHtml(sanitized);
-  sanitized = preventSqlInjection(sanitized);
-  sanitized = preventPathTraversal(sanitized);
-  sanitized = preventCommandInjection(sanitized);
-  sanitized = preventNoSqlInjection(sanitized);
-  sanitized = preventTemplateInjection(sanitized);
-  sanitized = preventCrlfInjection(sanitized);
-  sanitized = preventUnicodeAttacks(sanitized);
-  
-  sanitized = preventDataUrlXss(sanitized);
-  sanitized = preventPrototypePollution(sanitized);
-  sanitized = preventRegexDos(sanitized);
-  sanitized = preventHppAttacks(sanitized);
-  sanitized = preventFormatStringAttack(sanitized);
-  sanitized = preventRequestSmuggling(sanitized);
-  sanitized = preventSsrf(sanitized);
-  sanitized = preventXmlAttacks(sanitized);
-  
-  sanitized = sanitized.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
-  
-  sanitized = sanitized.replace(/(\b)(on\S+)(\s*)=/g, '');
-  sanitized = sanitized.replace(/javascript:/gi, '');
-  
-  sanitized = sanitized.slice(0, 1000);
-  
-  return sanitized.trim();
+const handleExtensionError = (error) => {
+  console.warn('Extension context error detected:', error);
+  requests.clear();
+  return true;
 };
 
 const rateLimiter = (() => {
@@ -187,31 +164,83 @@ const rateLimiter = (() => {
   const windowMs = 15 * 60 * 1000;
 
   return (ip) => {
-    const now = Date.now();
-    const windowStart = now - windowMs;
-    
-    requests.forEach((timestamp, key) => {
-      if (timestamp < windowStart) {
-        requests.delete(key);
+    try {
+      const now = Date.now();
+      const windowStart = now - windowMs;
+      
+      try {
+        requests.forEach((timestamp, key) => {
+          if (timestamp < windowStart) {
+            requests.delete(key);
+          }
+        });
+      } catch (cleanupError) {
+        console.warn('Error during cleanup:', cleanupError);
+        requests.clear();
       }
-    });
 
-    const requestCount = (requests.get(ip) || [])
-      .filter(timestamp => timestamp > windowStart)
-      .length;
+      let requestCount = 0;
+      try {
+        const timestamps = requests.get(ip) || [];
+        requestCount = timestamps.filter(timestamp => timestamp > windowStart).length;
+      } catch (countError) {
+        console.warn('Error counting requests:', countError);
+        return true;
+      }
 
-    if (requestCount >= limit) {
-      return false;
+      if (requestCount >= limit) {
+        return false;
+      }
+
+      try {
+        const timestamps = requests.get(ip) || [];
+        timestamps.push(now);
+        requests.set(ip, timestamps);
+      } catch (updateError) {
+        console.warn('Error updating timestamps:', updateError);
+        return true;
+      }
+
+      return true;
+    } catch (error) {
+      return handleExtensionError(error);
     }
-
-    const timestamps = requests.get(ip) || [];
-    timestamps.push(now);
-    requests.set(ip, timestamps);
-
-    
-    return true;
   };
 })();
+
+const sanitizeInput = (input) => {
+  if (!input) return '';
+  if (typeof input !== 'string') return '';
+
+  // Pertahankan karakter alfanumerik, spasi, dan tanda baca umum
+  let sanitized = input
+    // Pertahankan spasi dan baris baru
+    .replace(/\t/g, ' ')
+    // Hapus karakter berbahaya
+    .replace(/[<>]/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/data:/gi, '')
+    // Hapus karakter kontrol kecuali spasi dan baris baru
+    .replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, '');
+
+  // Jangan gunakan trim() agar spasi di awal dan akhir tetap ada
+  return sanitized;
+};
+
+const initializeRecovery = () => {
+  window.addEventListener('error', (event) => {
+    if (event.error?.message?.includes('Extension context invalidated')) {
+      console.warn('Extension context error detected, attempting recovery...');
+      requests.clear();
+    }
+  });
+};
+
+try {
+  initializeRecovery();
+} catch (error) {
+  console.warn('Failed to initialize recovery:', error);
+}
 
 export { 
   sanitizeInput, 
