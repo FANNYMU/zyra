@@ -562,7 +562,7 @@ const ChatContainer = () => {
                 </motion.div>
               </motion.div>
             ) : (
-              <div className="flex flex-col w-full max-w-4xl mx-auto px-8">
+              <div className="flex flex-col w-full max-w-4xl mx-auto min-w-[200px] px-8">
                 <div className="flex flex-col gap-8 py-8">
                   {messages.map((message, index) => (
                     <motion.div
