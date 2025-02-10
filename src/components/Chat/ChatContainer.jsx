@@ -587,10 +587,26 @@ const ChatContainer = () => {
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 20 }}
-          // className={`absolute bottom-0 ${isSidebarOpen ? 'left-128' : 'left-155'} z-50 right-0 bg-gradient-to-t from-[#0c1716] via-[#0c1716]/80 to-transparent`}
-          className={`fixed bottom-0 ${isSidebarOpen ? 'left-177' : 'left-147'} right-0 bg-gradient-to-t from-[#0c1716] via-[#0c1716]/80 to-transparent py-4`}
+          className={`fixed bottom-0 
+            ${isSidebarOpen 
+              ? 'lg:left-[640px] mb:left-[240px] left-0' // Untuk desktop dengan sidebar terbuka
+              : 'mb:left-0 lg:left-125 left-0' // Untuk mobile atau sidebar tertutup
+            }
+            right-0 
+            bg-gradient-to-t 
+            from-[#0c1716] 
+            via-[#0c1716]/80 
+            to-transparent 
+
+
+            py-4
+            px-4
+            transition-all 
+            duration-300
+            z-20
+          `}
         >
-          <div className="w-full max-w-2xl mx-auto px-4">
+          <div className="w-full max-w-4xl mx-auto">
             <motion.div
               whileHover={{ scale: 1.01 }}
               className="bg-[#0f1f1d] rounded-lg border border-emerald-800/20 shadow-2xl overflow-hidden backdrop-blur-xl"
