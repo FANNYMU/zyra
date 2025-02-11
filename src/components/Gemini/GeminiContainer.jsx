@@ -146,7 +146,9 @@ const GeminiContainer = () => {
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 20 }}
-          className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-[#0c1620] via-[#0c1620]/80 to-transparent py-4 px-4 transition-all duration-300 z-20"
+          className={`
+          fixed bottom-0 lg:left-[520px] left-0 right-0 bg-gradient-to-t from-[#0c1620] via-[#0c1620]/80 to-transparent py-4 px-4 transition-all duration-300 z-20`}
+          
         >
           <div className="w-full max-w-4xl mx-auto space-y-4">
             <div ref={dropdownRef} className="w-full relative">
