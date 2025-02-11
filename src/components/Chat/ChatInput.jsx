@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { Image as ImageIcon, Send as SendIcon } from 'lucide-react'
 
-function ChatInput({ onSendMessage, theme = 'emerald' }) {
+function ChatInput({ onSendMessage, theme = 'emerald', isGeneratingImage = false }) {
   const [message, setMessage] = useState('')
   const [selectedImage, setSelectedImage] = useState(null)
   const fileInputRef = useRef(null)
@@ -86,8 +86,9 @@ function ChatInput({ onSendMessage, theme = 'emerald' }) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="Ketik pesan Anda..."
-          className={`flex-1 h-12 px-4 ${colors.bg} text-base ${colors.text} ${colors.placeholder} focus:outline-none focus:ring-2 ${colors.focus} transition-all border-0 rounded-lg`}
+          placeholder={isGeneratingImage ? 'Generating image...' : 'Ketik pesan Anda...'}
+          disabled={isGeneratingImage}
+          className={`flex-1 h-12 px-4 ${colors.bg} text-base ${colors.text} ${colors.placeholder} focus:outline-none focus:ring-2 ${colors.focus} transition-all border-0 rounded-lg ${isGeneratingImage ? 'opacity-50' : ''}`}
         />
         <input
           type="file"
@@ -95,18 +96,20 @@ function ChatInput({ onSendMessage, theme = 'emerald' }) {
           onChange={handleImageSelect}
           accept="image/*"
           className="hidden"
+          disabled={isGeneratingImage}
         />
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className={`p-3 ${colors.icon} ${colors.hoverIcon} ${colors.hover} rounded-lg transition-colors`}
+          disabled={isGeneratingImage}
+          className={`p-3 ${colors.icon} ${colors.hoverIcon} ${colors.hover} rounded-lg transition-colors ${isGeneratingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           <ImageIcon className="w-5 h-5" />
         </button>
         <button
           type="submit"
-          disabled={!message.trim()}
-          className={`p-3 ${colors.icon} ${colors.hoverIcon} ${colors.disabled} disabled:cursor-not-allowed rounded-lg transition-colors ${colors.hover}`}
+          disabled={!message.trim() || isGeneratingImage}
+          className={`p-3 ${colors.icon} ${colors.hoverIcon} ${colors.disabled} disabled:cursor-not-allowed rounded-lg transition-colors ${colors.hover} ${isGeneratingImage ? 'opacity-50' : ''}`}
         >
           <SendIcon className="w-5 h-5" />
         </button>

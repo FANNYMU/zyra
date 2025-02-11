@@ -2,10 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import ChatBubble from './ChatBubble';
 import ChatInput from './ChatInput';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send as SendIcon, Menu, Settings, Plus, MessageSquare, Trash2, Sun, Moon, Volume2, VolumeX, Languages } from 'lucide-react';
+import { Send as SendIcon, Menu, Settings, Plus, MessageSquare, Trash2, Sun, Moon, Volume2, VolumeX, Languages, ChevronDown } from 'lucide-react';
 import { generateResponse } from '../../services/mistralService';
 import { saveChat, loadChats, deleteChat, clearAllChats } from '../../services/dbService';
 import { sanitizeInput } from '../../utils/sanitizer';
+import { Link } from 'react-router-dom';
 
 const ChatContainer = () => {
   const [messages, setMessages] = useState([]);
@@ -24,6 +25,8 @@ const ChatContainer = () => {
     language: 'id',
   });
   const messagesEndRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Load theme preference
   useEffect(() => {
@@ -592,26 +595,49 @@ const ChatContainer = () => {
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 20 }}
-          className={`fixed bottom-0 
-            ${isSidebarOpen 
-              ? 'lg:left-[640px] mb:left-[240px] left-0' // Untuk desktop dengan sidebar terbuka
-              : 'mb:left-0 lg:left-125 left-0' // Untuk mobile atau sidebar tertutup
-            }
-            right-0 
-            bg-gradient-to-t 
-            from-[#0c1716] 
-            via-[#0c1716]/80 
-            to-transparent 
-
-
-            py-4
-            px-4
-            transition-all 
-            duration-300
-            z-20
-          `}
+          className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-[#0c1716] via-[#0c1716]/80 to-transparent py-4 px-4 transition-all duration-300 z-20"
         >
-          <div className="w-full max-w-4xl mx-auto">
+          <div className="w-full max-w-4xl mx-auto space-y-4">
+            <div ref={dropdownRef} className="w-full relative">
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className={`w-full px-4 py-2 text-sm font-medium rounded-lg transition-all
+                         flex items-center justify-between
+                         bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400
+                         text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40
+                         border border-emerald-600/20`}
+              >
+                Mistral
+                <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {isDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute left-0 right-0 bottom-full mb-2 bg-[#0c1716] border-emerald-800/20 rounded-lg border overflow-hidden shadow-xl z-[100]"
+                  >
+                    <Link
+                      to="/"
+                      onClick={() => setIsDropdownOpen(false)}
+                      className="block w-full px-4 py-2 text-sm font-medium text-left transition-all hover:bg-white/5 text-emerald-500 bg-white/10"
+                    >
+                      Mistral
+                    </Link>
+                    <Link
+                      to="/gemini"
+                      onClick={() => setIsDropdownOpen(false)}
+                      className="block w-full px-4 py-2 text-sm font-medium text-left transition-all hover:bg-white/5 text-blue-500"
+                    >
+                      Gemini
+                    </Link>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <motion.div
               whileHover={{ scale: 1.01 }}
               className="bg-[#0f1f1d] rounded-lg border border-emerald-800/20 shadow-2xl overflow-hidden backdrop-blur-xl"
@@ -624,7 +650,7 @@ const ChatContainer = () => {
               transition={{ delay: 0.6 }}
               className="text-xs text-center mt-3 text-emerald-500/50"
             >
-              Zyra dapat membuat kesalahan. Pertimbangkan untuk memeriksa informasi penting.
+              Mistral dapat membuat kesalahan. Pertimbangkan untuk memeriksa informasi penting.
             </motion.p>
           </div>
         </motion.div>
